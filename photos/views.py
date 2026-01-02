@@ -17,7 +17,6 @@ class PhotoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrAdmin]
 
     def get_queryset(self):
-        """Filter photos based on user and visibility"""
         user = self.request.user
         
         if user.is_authenticated and user.role == 'admin':
@@ -31,7 +30,6 @@ class PhotoViewSet(viewsets.ModelViewSet):
         return Photo.objects.filter(visibility='public')
 
     def get_throttles(self):
-        """Apply different throttles based on action"""
         if self.action == 'create':
             return [PhotoUploadThrottle()]
         elif self.action in ['list', 'retrieve']:
@@ -39,25 +37,21 @@ class PhotoViewSet(viewsets.ModelViewSet):
         return super().get_throttles()
 
     def list(self, request, *args, **kwargs):
-        """
-        List photos with Redis caching.
-        Cache key includes user ID to cache different views for different users.
-        """
         user = request.user
         page = request.query_params.get('page', 1)
         
-        # Generate cache key based on user and page
+        #cache the viewing of photos
         if user.is_authenticated:
             cache_key = f'photos_list_user_{user.id}_page_{page}'
         else:
             cache_key = f'photos_list_anon_page_{page}'
         
-        # Try to get from cache
+        #take and display the cached data
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return Response(cached_data)
         
-        # If not in cache, get from database
+        #if not cached data get the data from the DB
         queryset = self.filter_queryset(self.get_queryset())
         page_obj = self.paginate_queryset(queryset)
         
@@ -68,48 +62,39 @@ class PhotoViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(queryset, many=True)
             response_data = serializer.data
         
-        # Cache the response for 5 minutes
+        #allowed time for cached data
         cache.set(cache_key, response_data, timeout=settings.CACHE_TTL)
-        
         return Response(response_data)
 
     def retrieve(self, request, *args, **kwargs):
-        """
-        Retrieve single photo with Redis caching.
-        Public photos are cached longer than private photos.
-        """
         photo_id = kwargs.get('pk')
         cache_key = f'photo_detail_{photo_id}'
         
-        # Try to get from cache
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return Response(cached_data)
         
-        # If not in cache, get from database
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         response_data = serializer.data
         
-        # Cache based on visibility
         if instance.visibility == 'public':
-            # Public photos cached for 1 hour
             cache.set(cache_key, response_data, timeout=settings.CACHE_TTL_LONG)
         else:
-            # Private photos cached for 5 minutes
             cache.set(cache_key, response_data, timeout=settings.CACHE_TTL)
         
         return Response(response_data)
 
     def create(self, request, *args, **kwargs):
-        """Handle photo upload with cache invalidation"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
         file = request.FILES.get('image')
         if not file:
             return Response(
-                {'error': 'No image file provided'},
+                {
+                    'error': 'No image file provided'
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -120,7 +105,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
             
             photo = serializer.save(owner=request.user, image_url=image_url)
             
-            # Invalidate cache after creating new photo
+            #delete the cache after uploading
             self._invalidate_photo_caches(request.user)
             
             return Response(
@@ -140,7 +125,6 @@ class PhotoViewSet(viewsets.ModelViewSet):
             )
 
     def update(self, request, *args, **kwargs):
-        """Update photo with cache invalidation"""
         partial = kwargs.pop('partial', False)
         photo = self.get_object()
         serializer = self.get_serializer(photo, data=request.data, partial=partial)
@@ -170,13 +154,11 @@ class PhotoViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
         
-        # Invalidate caches
         self._invalidate_photo_caches(request.user, photo.id)
         
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        """Delete photo with cache invalidation"""
         photo = self.get_object()
         image_url = photo.image_url
         photo_id = photo.id
@@ -186,7 +168,6 @@ class PhotoViewSet(viewsets.ModelViewSet):
             storage.delete(image_url)
             self.perform_destroy(photo)
             
-            # Invalidate caches
             self._invalidate_photo_caches(request.user, photo_id)
             
             return Response(
@@ -212,36 +193,18 @@ class PhotoViewSet(viewsets.ModelViewSet):
             )
 
     def _invalidate_photo_caches(self, user, photo_id=None):
-        """
-        Helper method to invalidate relevant caches.
-        
-        Invalidates:
-        - User's photo list cache (all pages)
-        - Anonymous photo list cache (if photo is public)
-        - Specific photo detail cache
-        - Custom endpoint caches (my_photos, public)
-        """
-        # Invalidate user's list cache (we don't know exact page count, so delete pattern)
-        # In production, you'd use cache.delete_pattern() with redis
-        # For now, we'll delete common pages
-        for page in range(1, 11):  # Clear first 10 pages
+        for page in range(1, 11):
             cache.delete(f'photos_list_user_{user.id}_page_{page}')
             cache.delete(f'photos_list_anon_page_{page}')
         
-        # Invalidate specific photo cache
         if photo_id:
             cache.delete(f'photo_detail_{photo_id}')
         
-        # Invalidate custom endpoint caches
         cache.delete(f'my_photos_user_{user.id}')
         cache.delete('public_photos')
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticatedOrReadOnly])
     def my_photos(self, request):
-        """
-        Get authenticated user's photos with caching.
-        GET /api/photos/my_photos/
-        """
         if not request.user.is_authenticated:
             return Response(
                 {'error': 'Authentication required'},
