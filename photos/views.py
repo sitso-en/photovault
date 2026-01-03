@@ -270,7 +270,6 @@ class PhotoViewSet(viewsets.ModelViewSet):
             storage.delete(photo.image_url)
             photo.delete()
             
-            # Invalidate all caches since we don't know whose feed this affected
             self._invalidate_all_caches()
             
             return Response(
