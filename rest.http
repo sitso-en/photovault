@@ -60,3 +60,192 @@ Content-Type: application/json
 
 GET http://localhost:8000/api/albums/
 Authorization: Bearer <access_token>
+
+
+
+POST http://localhost:8000/api/albums/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+Body:
+{
+  "title": "Vacation 2025",
+  "description": "Photos from my summer vacation"
+}
+
+Response: 201 Created
+{
+  "id": 1,
+  "title": "Vacation 2025",
+  "description": "Photos from my summer vacation",
+  "owner": 1,
+  "owner_username": "john",
+  "photo_count": 0,
+  "created_at": "2025-01-06T10:30:00Z",
+  "updated_at": "2025-01-06T10:30:00Z"
+}
+
+
+POST http://localhost:8000/api/albums/1/add_photo/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+Body:
+{
+  "photo_id": 5
+}
+
+Response: 200 OK
+{
+  "message": "Photo added to album successfully",
+  "album_id": 1,
+  "photo_id": 5
+}
+
+
+
+POST http://localhost:8000/api/albums/1/add_photo/
+Headers:
+  Authorization: Bearer JOHN_TOKEN
+Body:
+{
+  "photo_id": 99  # Photo owned by Jane
+}
+
+Response: 400 Bad Request
+{
+  "photo_id": ["You can only add your own photos to albums"]
+}
+
+
+GET http://localhost:8000/api/albums/1/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+
+Response: 200 OK
+{
+  "id": 1,
+  "title": "Vacation 2025",
+  "description": "Photos from my summer vacation",
+  "owner": 1,
+  "owner_username": "john",
+  "photos": [
+    {
+      "id": 1,
+      "photo": {
+        "id": 5,
+        "title": "Beach Sunset",
+        "image_url": "https://...",
+        "visibility": "public"
+      },
+      "added_at": "2025-01-06T10:35:00Z"
+    }
+  ],
+  "photo_count": 1,
+  "created_at": "2025-01-06T10:30:00Z",
+  "updated_at": "2025-01-06T10:30:00Z"
+} 
+
+
+POST http://localhost:8000/api/albums/1/remove_photo/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+Body:
+{
+  "photo_id": 5
+}
+
+Response: 200 OK
+{
+  "message": "Photo removed from album successfully",
+  "album_id": 1,
+  "photo_id": 5
+}
+
+
+
+GET http://localhost:8000/api/albums/my_albums/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+
+Response: 200 OK
+[
+  {
+    "id": 1,
+    "title": "Vacation 2025",
+    "owner_username": "john",
+    "photo_count": 1,
+    ...
+  },
+  {
+    "id": 2,
+    "title": "Family Photos",
+    "owner_username": "john",
+    "photo_count": 5,
+    ...
+  }
+]
+
+
+
+GET http://localhost:8000/api/albums/99/
+Headers:
+  Authorization: Bearer JOHN_TOKEN
+# Album 99 belongs to Jane
+
+Response: 403 Forbidden
+{
+  "detail": "You do not have permission to perform this action."
+}
+
+
+POST http://localhost:8000/api/albums/5/flag_inappropriate/
+Headers:
+  Authorization: Bearer ADMIN_TOKEN
+Body:
+{
+  "reason": "Spam album"
+}
+
+Response: 200 OK
+{
+  "message": "Album flagged and deleted",
+  "details": {
+    "id": 5,
+    "title": "Spam Album",
+    "owner": "baduser",
+    "photo_count": 3,
+    "reason": "Spam album"
+  }
+}
+```
+
+---
+
+## Summary of Complete Album Features
+
+✅ **CRUD Operations**: Create, Read, Update, Delete albums  
+✅ **Photo Management**: Add/remove photos to/from albums  
+✅ **Ownership**: Only owner can access their albums  
+✅ **Photo Visibility**: Private photos hidden from album views  
+✅ **Validation**: Users can only add their own photos  
+✅ **Redis Caching**: List, detail, and photo views cached  
+✅ **Rate Limiting**: Throttles for create and modify operations  
+✅ **Admin Moderation**: Admins can delete inappropriate albums  
+✅ **Through Model**: Tracks when photos added to albums  
+✅ **Ordering**: Albums and photos ordered by date  
+
+---
+
+## Available Album Endpoints
+```
+POST   /api/albums/                        → Create album
+GET    /api/albums/                        → List user's albums (cached)
+GET    /api/albums/{id}/                   → Get album details (cached)
+PUT    /api/albums/{id}/                   → Update album
+PATCH  /api/albums/{id}/                   → Partial update
+DELETE /api/albums/{id}/                   → Delete album
+
+POST   /api/albums/{id}/add_photo/         → Add photo to album
+POST   /api/albums/{id}/remove_photo/      → Remove photo from album
+GET    /api/albums/{id}/photos/            → List photos in album (cached)
+GET    /api/albums/my_albums/              → User's own albums (cached)
+POST   /api/albums/{id}/flag_inappropriate/ → Admin delete album

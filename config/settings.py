@@ -211,6 +211,8 @@ REST_FRAMEWORK = {
         "user": "1500/hour",
         "photo_upload": "20/hour",
         "photo_view": "2000/hour",
+        "album_create": "50/hour",
+        "album_modify": "200/hour",
     },
 
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",

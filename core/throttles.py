@@ -16,3 +16,13 @@ class PhotoUploadThrottle(UserRateThrottle):
 class PhotoViewThrottle(UserRateThrottle):
     scope = 'photo_view'
     rate = '2000/hour'
+
+
+class AlbumCreateThrottle(UserRateThrottle):
+    scope = 'album_create'
+    rate = '50/hour'
+
+
+class AlbumModifyThrottle(UserRateThrottle):
+    scope = 'album_modify'
+    rate = '200/hour'
