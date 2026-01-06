@@ -217,35 +217,3 @@ Response: 200 OK
   }
 }
 ```
-
----
-
-## Summary of Complete Album Features
-
-✅ **CRUD Operations**: Create, Read, Update, Delete albums  
-✅ **Photo Management**: Add/remove photos to/from albums  
-✅ **Ownership**: Only owner can access their albums  
-✅ **Photo Visibility**: Private photos hidden from album views  
-✅ **Validation**: Users can only add their own photos  
-✅ **Redis Caching**: List, detail, and photo views cached  
-✅ **Rate Limiting**: Throttles for create and modify operations  
-✅ **Admin Moderation**: Admins can delete inappropriate albums  
-✅ **Through Model**: Tracks when photos added to albums  
-✅ **Ordering**: Albums and photos ordered by date  
-
----
-
-## Available Album Endpoints
-```
-POST   /api/albums/                        → Create album
-GET    /api/albums/                        → List user's albums (cached)
-GET    /api/albums/{id}/                   → Get album details (cached)
-PUT    /api/albums/{id}/                   → Update album
-PATCH  /api/albums/{id}/                   → Partial update
-DELETE /api/albums/{id}/                   → Delete album
-
-POST   /api/albums/{id}/add_photo/         → Add photo to album
-POST   /api/albums/{id}/remove_photo/      → Remove photo from album
-GET    /api/albums/{id}/photos/            → List photos in album (cached)
-GET    /api/albums/my_albums/              → User's own albums (cached)
-POST   /api/albums/{id}/flag_inappropriate/ → Admin delete album
