@@ -20,7 +20,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         if user.is_authenticated and user.role == 'admin':
-            return Photo.objects.all()
+            return Photo.objects.filter(visibility='public')
         
         if user.is_authenticated:
             return Photo.objects.filter(
