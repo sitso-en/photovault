@@ -46,9 +46,7 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
         
         visible_photos = obj.get_visible_photos(user)
         
-        album_photos = AlbumPhoto.objects.filter(
-            album=obj,
-            photo__in=visible_photos
+        album_photos = AlbumPhoto.objects.filter(album=obj, photo__in=visible_photos
         ).select_related('photo')
         
         return AlbumPhotoSerializer(album_photos, many=True).data
@@ -63,7 +61,7 @@ class AddPhotoToAlbumSerializer(serializers.Serializer):
     photo_id = serializers.IntegerField()
     
     def validate_photo_id(self, value):
-        #Validate that photo exists and belongs to user
+        #    validate that photo exists and belongs to user
         request = self.context.get('request')
         
         try:
@@ -81,7 +79,6 @@ class RemovePhotoFromAlbumSerializer(serializers.Serializer):
     photo_id = serializers.IntegerField()
     
     def validate_photo_id(self, value):
-        #validate that photo exists
         try:
             Photo.objects.get(id=value)
         except Photo.DoesNotExist:

@@ -52,5 +52,7 @@ TAKE NOTE!
 - Users can only add their own photos to albums.
 - Albums are private to owners unless flagged by admin.
 - Admin can delete inappropriate albums.
+- Admin can flag a photo inappropriate
+
 
 
