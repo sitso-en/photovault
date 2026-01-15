@@ -13,8 +13,8 @@ from .serializers import PhotoSerializer
 
 
 class PhotoViewSet(viewsets.ModelViewSet):
-    serializer_class = PhotoSerializer
     permission_classes = [IsOwnerOrAdmin]
+    serializer_class = PhotoSerializer
 
     def get_queryset(self):
         user = self.request.user
