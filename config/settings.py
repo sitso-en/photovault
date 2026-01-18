@@ -203,7 +203,10 @@ REST_FRAMEWORK = {
 
     "DEFAULT_THROTTLE_CLASSES": [
         "core.throttles.AnonymousUserThrottle",
-        "core.throttles.AuthenticatedUserThrottle",
+        "core.throttles.PhotoUploadThrottle",
+        "core.throttles.PhotoViewThrottle",
+        "core.throttles.AlbumCreateThrottle",
+        "core.throttles.AlbumModifyThrottle",
     ],
 
     "DEFAULT_THROTTLE_RATES": {
