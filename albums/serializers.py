@@ -44,17 +44,23 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user if request else None
         
-        visible_photos = obj.get_visible_photos(user)
+        album_photos = AlbumPhoto.objects.filter(album=obj).select_related('photo', 'photo__owner')
         
-        album_photos = AlbumPhoto.objects.filter(album=obj, photo__in=visible_photos
-        ).select_related('photo')
+        if user and user.is_authenticated and obj.owner == user:
+            pass
+        else:
+            album_photos = album_photos.filter(photo__visibility='public')
         
         return AlbumPhotoSerializer(album_photos, many=True).data
     
     def get_photo_count(self, obj):
         request = self.context.get('request')
         user = request.user if request else None
-        return obj.get_visible_photos(user).count()
+        
+        if user and user.is_authenticated and obj.owner == user:
+            return obj.photos.count()
+        else:
+            return obj.photos.filter(visibility='public').count()
 
 
 class AddPhotoToAlbumSerializer(serializers.Serializer):
