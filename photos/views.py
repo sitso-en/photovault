@@ -20,7 +20,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         if user.is_authenticated and user.role == 'admin':
-            return Photo.objects.filter(visibility='public')
+            return Photo.objects.all()
         
         if user.is_authenticated:
             return Photo.objects.filter(
@@ -172,7 +172,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
             
             return Response(
                 {'message': 'Photo deleted successfully'},
-                status=status.HTTP_204_NO_CONTENT
+                status=status.HTTP_200_OK
             )
             
         except StorageException as e:
